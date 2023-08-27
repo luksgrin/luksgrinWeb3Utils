@@ -2,6 +2,15 @@ from subprocess import Popen, PIPE
 from sha3 import keccak_256 as keccak256
 import json
 
+BANNED_VYPER_NAMES = (
+    "number", "from", "value"
+)
+SOL_VY_DIFF = {
+    "string" : "String[100]",
+    "bytes" : "Bytes[100]",
+}
+
+
 def get_abi_solc(filename: str) -> dict:
     """ Function to get the ABI of a Solidity smart contract using solc.
     :param filename: The name of the Solidity file to get the ABI of.
@@ -77,6 +86,12 @@ def make_vyper_interface(contract_abi: list, name: str) -> str:
         if el["type"] != "function":
             continue
 
+        for _input in el["inputs"]:
+            if _input["type"] in SOL_VY_DIFF:
+                _input["type"] = SOL_VY_DIFF[_input["type"]]
+            if _input["name"] in BANNED_VYPER_NAMES:
+                _input["name"] = _input["name"] + "_"
+
         name = el["name"]
         inputs = ", ".join(
             [f"{_input['name']}: {_input['type']}" for _input in el["inputs"]]
@@ -84,10 +99,16 @@ def make_vyper_interface(contract_abi: list, name: str) -> str:
 
         function_sig = f"{name}({inputs})"
 
-        if len(el["outputs"]) == 1:
-            function_sig += " -> " + el["outputs"][0]["type"]
-        elif len(el["outputs"]) > 1:
-            function_sig += "-> (" + ", ".join([_output["type"] for _output in el["outputs"]]) + ")"
+        if len(el["outputs"]) > 0:
+
+            for _output in el["outputs"]:
+                if _output["type"] in SOL_VY_DIFF:
+                    _output["type"] = SOL_VY_DIFF[_output["type"]]
+
+            if len(el["outputs"]) == 1:
+                function_sig += " -> " + el["outputs"][0]["type"]
+            else:
+                function_sig += "-> (" + ", ".join([_output["type"] for _output in el["outputs"]]) + ")"
 
         mutability = el["stateMutability"]
 
