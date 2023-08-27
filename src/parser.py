@@ -18,8 +18,8 @@ subparser1_parser.add_argument(
     help="The name of the .sol file"
 )
 subparser2_parser = subparsers.add_parser(
-    "vyper_interface_maker",
-    help="Computes the vyper interface from a .sol file"
+    "make_inline_vyper_interface",
+    help="Computes the inline vyper interface from a .sol file"
 )
 subparser2_parser.add_argument(
     "filename",
@@ -36,4 +36,12 @@ subparser3_parser.add_argument(
 subparser3_parser.add_argument(
     "selector",
     help="The selector to filter"
+)
+subparser4_parser = subparsers.add_parser(
+    "make_importable_vyper_interface",
+    help="Computes the importable vyper interface from a .sol file"
+)
+subparser4_parser.add_argument(
+    "filename",
+    help="The name of the .sol file"
 )

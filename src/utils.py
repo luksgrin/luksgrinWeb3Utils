@@ -70,8 +70,8 @@ def get_signature_and_selector(abi_dict: dict) -> list[tuple[str, str]]:
 
     return sigs_and_selectors
 
-def make_vyper_interface(contract_abi: list, name: str) -> str:
-    """ Given an abi list, return a vyper interface
+def make_inline_vyper_interface(contract_abi: list, name: str) -> str:
+    """ Given an abi list, return an inline vyper interface
     :param abi_dict: a dictionary representing an abi
     :param name: the name of the interface
     :return: a string representing the vyper interface
@@ -80,6 +80,51 @@ def make_vyper_interface(contract_abi: list, name: str) -> str:
     interface_name = f"interface {name}:\n"
 
     functions = []
+
+    for el in _vyper_interface_helper(contract_abi):
+
+        function_sig = el[0]
+        mutability = el[1]
+
+        functions.append(
+            4*" " + f"def {function_sig}: {mutability}"
+        )
+
+    return interface_name + "\n".join(functions)
+
+def make_importable_vyper_interface(contract_abi: list, name: str) -> str:
+    """ Given an abi list, return an importable vyper interface
+    :param abi_dict: a dictionary representing an abi
+    :param name: the name of the interface
+    :return: a string representing the vyper interface
+    """
+
+    interface_name = f"# interface {name}:\n"
+
+    functions = []
+
+    for el in _vyper_interface_helper(contract_abi):
+
+        function_sig = el[0]
+        mutability = el[1]
+        
+        if mutability == "nonpayable":
+            mutability = ""
+        else:
+            mutability = f"@{mutability}\n"
+
+        functions.append(
+            "@external\n"
+            + mutability
+            + f"def {function_sig}:\n"
+            + 4*" " + "pass\n"
+        )
+
+    return interface_name + "\n".join(functions)
+
+def _vyper_interface_helper(contract_abi: list) -> list[tuple[str, str]]:
+
+    semi_processed = []
 
     for el in contract_abi:
 
@@ -112,8 +157,6 @@ def make_vyper_interface(contract_abi: list, name: str) -> str:
 
         mutability = el["stateMutability"]
 
-        functions.append(
-            4*" " + f"def {function_sig}: {mutability}"
-        )
+        semi_processed.append((function_sig, mutability))
 
-    return interface_name + "\n".join(functions)
+    return semi_processed
