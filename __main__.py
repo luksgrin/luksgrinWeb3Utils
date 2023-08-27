@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.9
 import src.utils as utils
 from src.parser import parser
 
